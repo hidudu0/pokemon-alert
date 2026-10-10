@@ -23,3 +23,7 @@ test('kakao: 형태 다른 응답은 throw', () => {
   assert.throws(() => parsePosts({ error: 'blocked' }), /items/);
   assert.throws(() => parsePosts(null), /items/);
 });
+
+test('kakao: id 필드 이름이 바뀌면 throw', () => {
+  assert.throws(() => parsePosts({ items: [{ post_id: 1, title: 'x' }] }), /id/);
+});

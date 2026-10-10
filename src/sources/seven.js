@@ -31,6 +31,8 @@ export function parseStores(jsons) {
 export function parseStock(json, stores) {
   const list = json?.data?.storeList;
   if (!Array.isArray(list)) throw new Error('세븐 재고 응답 형태 다름');
+  // ID 필드 이름이 바뀌면 전부 걸러져 조용히 0건이 된다
+  if (list.some((r) => r.storeCd == null)) throw new Error('세븐 재고 응답 형태 다름: storeCd 없음');
   const byId = new Map(stores.map((s) => [s.id, s]));
   return list
     .filter((r) => byId.has(String(r.storeCd)))

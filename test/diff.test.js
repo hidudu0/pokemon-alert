@@ -100,3 +100,13 @@ test('알림 여러 개는 한 메시지, 재고 → GS25 → 카카오 순', ()
   assert.equal(lines[3], 'https://pf.kakao.com/_kxhLKxj/2');
   assert.equal(lines.length, 4);
 });
+
+test('첫 실행: 실패한 소스를 밝힌다 (세븐 403 이면 "재고 없음"만으론 오해)', () => {
+  const { text } = diff({}, all({ seven: fail() }));
+  assert.equal(text.split('\n')[0], '📋 포켓몬카드 30주년 알림 시작');
+  assert.match(text, /조회 실패: 세븐일레븐/);
+});
+
+test('첫 실행: 모두 성공하면 실패 줄 없음', () => {
+  assert.doesNotMatch(diff({}, all()).text, /조회 실패/);
+});

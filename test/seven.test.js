@@ -45,3 +45,7 @@ test('seven: 숫자 storeCd 도 매장과 맞춘다', () => {
   const rows = parseStock({ success: true, data: { storeList: [{ storeCd: 68846, realStock: 2 }] } }, STORES);
   assert.deepEqual(rows.map((r) => [r.key, r.qty]), [['seven:68846', 2]]);
 });
+
+test('seven: storeCd 필드 이름이 바뀌면 조용히 0건이 아니라 throw', () => {
+  assert.throws(() => parseStock({ success: true, data: { storeList: [{ store_cd: '68846', realStock: 1 }] } }, STORES), /storeCd/);
+});

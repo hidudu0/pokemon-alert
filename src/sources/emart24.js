@@ -23,6 +23,8 @@ export function stockUrls(barcode, ids) {
 
 export function parseStock(json, stores) {
   if (!Array.isArray(json?.storeGoodsQty)) throw new Error('이마트24 재고 응답 형태 다름');
+  // ID 필드 이름이 바뀌면 전부 걸러져 조용히 0건이 된다
+  if (json.storeGoodsQty.some((r) => r.BIZNO == null)) throw new Error('이마트24 재고 응답 형태 다름: BIZNO 없음');
   const byId = new Map(stores.map((s) => [s.id, s]));
   // BIZNO 가 숫자로 와도 문자열 CODE 와 맞도록
   return json.storeGoodsQty

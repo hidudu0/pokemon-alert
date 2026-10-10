@@ -15,10 +15,10 @@ GitHub Actions 가 5분마다 `src/check.js` 를 돌린다. 이전 상태는 Act
 ## 설정
 
 1. 텔레그램 @BotFather → `/newbot` → 토큰
-2. 만든 봇에게 아무 메시지나 보낸 뒤 chat id 확인:
-   `curl -s "https://api.telegram.org/bot<토큰>/getUpdates" | grep -o '"chat":{"id":[0-9-]*'`
+2. 만든 봇에게 아무 메시지나 보낸 뒤 chat id 확인 (토큰은 화면에 안 보이게 입력받아 셸 히스토리에 안 남음):
+   `read -s T && curl -s "https://api.telegram.org/bot$T/getUpdates" | grep -o '"chat":{"id":[0-9-]*'; unset T`
 3. `gh secret set TELEGRAM_TOKEN` / `gh secret set TELEGRAM_CHAT_ID` (프롬프트에 붙여넣기)
-4. `gh workflow run check.yml` → 폰에 "📋 포켓몬카드 30주년 알림 시작"
+4. `gh workflow enable check.yml && gh workflow run check.yml` → 폰에 "📋 포켓몬카드 30주년 알림 시작"
 
 ## 명령
 

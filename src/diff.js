@@ -54,6 +54,13 @@ export function diff(prev, results) {
   }
 
   const lines = [...stock, ...gs25, ...kakao, ...health];
-  if (first) lines.unshift('📋 포켓몬카드 30주년 알림 시작', ...(stock.length ? [] : ['재고 있는 매장 없음']));
+  if (first) {
+    const down = Object.entries(results).filter(([, r]) => !r.ok).map(([src]) => LABEL[src]);
+    lines.unshift(
+      '📋 포켓몬카드 30주년 알림 시작',
+      ...(stock.length ? [] : ['재고 있는 매장 없음']),
+      ...(down.length ? [`조회 실패: ${down.join(', ')}`] : []),
+    );
+  }
   return { state, text: lines.join('\n') };
 }

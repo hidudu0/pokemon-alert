@@ -59,3 +59,7 @@ test('emart24: CODE 없는 매장은 throw (빈 bizNoArr 방지)', () => {
     /CODE/,
   );
 });
+
+test('emart24: BIZNO 필드 이름이 바뀌면 조용히 0건이 아니라 throw', () => {
+  assert.throws(() => parseStock({ storeGoodsQty: [{ bizno: '20913', BIZQTY: 9 }] }, [첨단]), /BIZNO/);
+});
