@@ -13,7 +13,7 @@ const base = { initialized: true, kakaoSeen: [1], stock: {}, gs25Listed: false, 
 test('첫 실행: 시작 안내 + 재고 있는 매장 + 최신 글 1개, 나머지 글은 본 것으로', () => {
   const { state, text } = diff({}, all({ kakao: ok([post(3), post(2), post(1)]), emart24: ok([row('emart24', 'A', 9), row('emart24', 'B', 0)]) }));
   assert.match(text, /^📋/);
-  assert.match(text, /🟢 이마트24 A점 9개 \(1\.2km\)/);
+  assert.match(text, /🔴 이마트24 A점 9개 \(1\.2km\)/);
   assert.doesNotMatch(text, /B점/);
   assert.match(text, /📢 글3/);
   assert.doesNotMatch(text, /글2/);
@@ -42,21 +42,32 @@ test('카카오: 첫 실행 때 실패했다가 나중에 성공해도 글 폭�
   assert.doesNotMatch(r2.text, /글2/);
 });
 
-test('재고: 0/없음 → N 만 알림, N→M 과 N→0 은 조용히', () => {
-  const prev = { ...base, stock: { 'seven:A': 0, 'seven:B': 2, 'seven:C': 3 } };
-  const { state, text } = diff(prev, all({ seven: ok([row('seven', 'A', 1), row('seven', 'B', 5), row('seven', 'C', 0), row('seven', 'D', 4)]) }));
-  assert.match(text, /세븐일레븐 A점 1개/);
-  assert.match(text, /세븐일레븐 D점 4개/);
-  assert.doesNotMatch(text, /B점|C점/);
-  assert.deepEqual(state.stock, { 'seven:A': 1, 'seven:B': 5, 'seven:C': 0, 'seven:D': 4 });
+test('재고: 0/없음 → N 은 🔴, 줄면 🔽, 늘거나 그대로면 조용히', () => {
+  const prev = { ...base, stock: { 'seven:A': 0, 'seven:B': 2, 'seven:C': 3, 'seven:E': 4, 'seven:F': 2 } };
+  const { state, text } = diff(
+    prev,
+    all({ seven: ok([row('seven', 'A', 1), row('seven', 'B', 5), row('seven', 'C', 0), row('seven', 'D', 4), row('seven', 'E', 1), row('seven', 'F', 2)]) }),
+  );
+  assert.deepEqual(text.split('\n'), [
+    '🔴 세븐일레븐 A점 1개 (1.2km)',
+    '🔴 세븐일레븐 D점 4개 (1.2km)',
+    '🔽 세븐일레븐 C점 3→0개',
+    '🔽 세븐일레븐 E점 4→1개',
+  ]);
+  assert.deepEqual(state.stock, { 'seven:A': 1, 'seven:B': 5, 'seven:C': 0, 'seven:D': 4, 'seven:E': 1, 'seven:F': 2 });
 });
 
-test('재고: 응답에서 빠진 매장은 0 으로, 다시 생기면 재입고 알림', () => {
-  const r1 = diff({ ...base, stock: { 'emart24:A': 9 } }, all());
+test('재고: 응답에서 빠진 매장은 0 으로 (이름은 기억해 둔 걸로), 다시 생기면 재입고 알림', () => {
+  const r0 = diff(base, all({ emart24: ok([row('emart24', 'A', 9)]) }));
+  const r1 = diff(r0.state, all());
   assert.equal(r1.state.stock['emart24:A'], 0);
-  assert.equal(r1.text, '');
+  assert.equal(r1.text, '🔽 이마트24 A점 9→0개');
   const r2 = diff(r1.state, all({ emart24: ok([row('emart24', 'A', 2)]) }));
-  assert.match(r2.text, /이마트24 A점 2개/);
+  assert.equal(r2.text, '🔴 이마트24 A점 2개 (1.2km)');
+});
+
+test('재고: 이름 모르는 매장(이전 버전 state)이 빠지면 키로 표시', () => {
+  assert.equal(diff({ ...base, stock: { 'emart24:A': 9 } }, all()).text, '🔽 emart24:A 9→0개');
 });
 
 test('실패한 소스는 이전 상태를 건드리지 않아 복구 직후 오탐이 없다', () => {
@@ -94,7 +105,7 @@ test('GS25: 등록되는 순간 한 번만', () => {
 test('알림 여러 개는 한 메시지, 재고 → GS25 → 카카오 순', () => {
   const { text } = diff(base, all({ kakao: ok([post(2), post(1)]), emart24: ok([row('emart24', 'A', 9)]), gs25: ok(true) }));
   const lines = text.split('\n');
-  assert.match(lines[0], /^🟢 이마트24 A점/);
+  assert.match(lines[0], /^🔴 이마트24 A점/);
   assert.match(lines[1], /^🆕 GS25/);
   assert.equal(lines[2], '📢 글2');
   assert.equal(lines[3], 'https://pf.kakao.com/_kxhLKxj/2');
@@ -113,7 +124,7 @@ test('첫 실행: 모두 성공하면 실패 줄 없음', () => {
 
 test('일부 소스만 넘겨도 동작한다 (맥에서 세븐만 돌릴 때)', () => {
   const r1 = diff({}, { seven: ok([row('seven', 'A', 2)]) });
-  assert.match(r1.text, /🟢 세븐일레븐 A점 2개/);
+  assert.match(r1.text, /🔴 세븐일레븐 A점 2개/);
   assert.doesNotMatch(r1.text, /조회 실패/);
   assert.deepEqual(Object.keys(r1.state.failures), ['seven']);
   const r2 = diff(r1.state, { seven: fail() });

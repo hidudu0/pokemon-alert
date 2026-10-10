@@ -11,10 +11,12 @@ export function diff(prev, results) {
     initialized: true,
     kakaoSeen: prev.kakaoSeen ?? [],
     stock: { ...prev.stock },
+    names: { ...prev.names }, // 응답에서 빠진 매장도 감소 알림에 이름을 쓰려고
     gs25Listed: prev.gs25Listed ?? false,
     failures: { ...prev.failures },
   };
   const stock = [];
+  const less = [];
   const gs25 = [];
   const kakao = [];
   const health = [];
@@ -23,9 +25,15 @@ export function diff(prev, results) {
     if (!results[src]?.ok) continue;
     for (const key of Object.keys(state.stock)) if (key.startsWith(`${src}:`)) state.stock[key] = 0; // 응답에 없는 매장 = 0
     for (const r of results[src].value) {
-      if (r.qty > 0 && !(prev.stock?.[r.key] > 0)) stock.push(`🟢 ${r.chain} ${r.name} ${r.qty}개 (${r.km.toFixed(1)}km)`);
+      if (r.qty > 0 && !(prev.stock?.[r.key] > 0)) stock.push(`🔴 ${r.chain} ${r.name} ${r.qty}개 (${r.km.toFixed(1)}km)`);
       state.stock[r.key] = r.qty;
+      state.names[r.key] = `${r.chain} ${r.name}`;
     }
+  }
+  // 실패한 소스는 위에서 안 건드려 prev 와 같으니 여기서 안 걸린다
+  for (const [key, qty] of Object.entries(state.stock)) {
+    const was = prev.stock?.[key] ?? 0;
+    if (qty < was) less.push(`🔽 ${state.names[key] ?? key} ${was}→${qty}개`);
   }
 
   if (results.gs25?.ok) {
@@ -53,7 +61,7 @@ export function diff(prev, results) {
     }
   }
 
-  const lines = [...stock, ...gs25, ...kakao, ...health];
+  const lines = [...stock, ...less, ...gs25, ...kakao, ...health];
   if (first) {
     const down = Object.entries(results).filter(([, r]) => !r.ok).map(([src]) => LABEL[src]);
     lines.unshift(
