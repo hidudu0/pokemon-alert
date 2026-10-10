@@ -11,13 +11,12 @@ export function km(lat1, lng1, lat2, lng2) {
 
 export const nearHome = (lat, lng) => km(HOME.lat, HOME.lng, Number(lat), Number(lng)) <= RADIUS_KM;
 
-export const stockRow = (src, chain, store, qty) => ({
-  key: `${src}:${store.id}`,
-  chain,
-  name: store.name,
-  qty: Number(qty) || 0,
-  km: km(HOME.lat, HOME.lng, store.lat, store.lng),
-});
+// 수량이 없거나 숫자가 아니면 0 으로 삼키지 않고 throw — 필드 이름이 바뀌면 바로 드러나게
+export function stockRow(src, chain, store, qty) {
+  const n = Number(qty);
+  if (qty == null || qty === '' || !Number.isFinite(n)) throw new Error(`${chain} 재고 수량 형태 다름: ${JSON.stringify(qty)}`);
+  return { key: `${src}:${store.id}`, chain, name: store.name, qty: n, km: km(HOME.lat, HOME.lng, store.lat, store.lng) };
+}
 
 export async function fetchJson(url, opts = {}) {
   const res = await fetch(url, { ...opts, headers: { ...HEADERS, ...opts.headers }, signal: AbortSignal.timeout(20_000) });

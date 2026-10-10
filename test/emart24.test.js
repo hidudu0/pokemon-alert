@@ -39,3 +39,23 @@ test('emart24: 형태 다른 응답은 throw', () => {
   assert.throws(() => parseStores({ error: 1 }), /형태/);
   assert.throws(() => parseStock({ storeGoodsInfo: null }, []), /형태/);
 });
+
+const 첨단 = { id: '20913', name: '첨단메디케어점', lat: 35.2136422667519, lng: 126.850841892567 };
+
+test('emart24: 수량 필드 이름이 바뀌면 0 으로 삼키지 않고 throw', () => {
+  assert.throws(() => parseStock({ storeGoodsQty: [{ BIZNO: '20913', QTY: 9 }] }, [첨단]), /형태/);
+});
+
+test('emart24: 숫자 BIZNO 도 매장과 맞춘다', () => {
+  const rows = parseStock({ storeGoodsQty: [{ BIZNO: 20913, BIZQTY: 9 }] }, [첨단]);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].key, 'emart24:20913');
+  assert.equal(rows[0].qty, 9);
+});
+
+test('emart24: CODE 없는 매장은 throw (빈 bizNoArr 방지)', () => {
+  assert.throws(
+    () => parseStores({ data: [{ TITLE: '코드없음점', LATITUDE: '35.2136422667519', LONGITUDE: '126.850841892567' }] }),
+    /CODE/,
+  );
+});

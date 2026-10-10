@@ -5,9 +5,11 @@ const STOCK_BATCH = 10; // 재고 API 가 한 번에 받는 매장 수
 
 export function parseStores(json) {
   if (!Array.isArray(json?.data)) throw new Error('이마트24 매장 응답 형태 다름');
+  // CODE 가 없으면 bizNoArr 에 빈 값이 들어가 전국 조회가 된다
+  if (json.data.some((s) => !s.CODE)) throw new Error('이마트24 매장 응답 형태 다름: CODE 없음');
   return json.data
     .filter((s) => s.LATITUDE && s.LONGITUDE && nearHome(s.LATITUDE, s.LONGITUDE))
-    .map((s) => ({ id: s.CODE, name: s.TITLE, lat: Number(s.LATITUDE), lng: Number(s.LONGITUDE) }));
+    .map((s) => ({ id: String(s.CODE), name: s.TITLE, lat: Number(s.LATITUDE), lng: Number(s.LONGITUDE) }));
 }
 
 // ids 가 비면 [] — bizNoArr 를 비우면 전국 조회가 되므로 빈 호출은 만들지 않는다
@@ -22,7 +24,10 @@ export function stockUrls(barcode, ids) {
 export function parseStock(json, stores) {
   if (!Array.isArray(json?.storeGoodsQty)) throw new Error('이마트24 재고 응답 형태 다름');
   const byId = new Map(stores.map((s) => [s.id, s]));
-  return json.storeGoodsQty.filter((r) => byId.has(r.BIZNO)).map((r) => stockRow('emart24', '이마트24', byId.get(r.BIZNO), r.BIZQTY));
+  // BIZNO 가 숫자로 와도 문자열 CODE 와 맞도록
+  return json.storeGoodsQty
+    .filter((r) => byId.has(String(r.BIZNO)))
+    .map((r) => stockRow('emart24', '이마트24', byId.get(String(r.BIZNO)), r.BIZQTY));
 }
 
 async function fetchStores() {
