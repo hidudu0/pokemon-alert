@@ -1,0 +1,10 @@
+{
+  "name": "pokemon-alert",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --env-file-if-exists=.env src/check.js"
+  }
+}
