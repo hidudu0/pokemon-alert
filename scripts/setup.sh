@@ -19,9 +19,16 @@ if [ -d "$DIR/.git" ]; then git -C "$DIR" pull -q --ff-only; else git clone -q "
 
 if [ ! -f "$DIR/.env" ]; then
   read -rsp '텔레그램 봇 토큰 (화면에 안 보임): ' T; echo
-  C=$(curl -fsS "https://api.telegram.org/bot$T/getUpdates" | grep -oE '"chat":\{"id":-?[0-9]+' | head -1 | grep -oE -- '-?[0-9]+$') || true
+  T="${T//[[:space:]]/}" # 복사할 때 딸려 온 공백·줄바꿈 제거
+  BOT=$(curl -sS "https://api.telegram.org/bot$T/getMe" | grep -oE '"username":"[^"]+"' | cut -d'"' -f4) || true
+  if [ -z "$BOT" ]; then
+    echo '토큰이 틀렸다. BotFather 가 준 토큰 전체(숫자:문자 형태)를 다시 복사해서 실행.' >&2
+    exit 1
+  fi
+  C=$(curl -sS "https://api.telegram.org/bot$T/getUpdates" | grep -oE '"chat":\{"id":-?[0-9]+' | head -1 | grep -oE -- '-?[0-9]+$') || true
   if [ -z "$C" ]; then
-    echo 'chat id 를 못 찾았다. 토큰이 맞는지, 봇 대화방에 메시지를 보냈는지 확인하고 다시 실행.' >&2
+    echo "토큰은 맞다 (봇 @$BOT). 그런데 이 봇에 온 메시지가 없다." >&2
+    echo "https://t.me/$BOT 을 열어 '시작' 누르고 아무 메시지나 보낸 뒤 다시 실행. (BotFather 대화방이 아니라 이 봇 대화방)" >&2
     exit 1
   fi
   (umask 077; printf 'TELEGRAM_TOKEN=%s\nTELEGRAM_CHAT_ID=%s\n' "$T" "$C" > "$DIR/.env")
