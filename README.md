@@ -6,6 +6,7 @@ GIST 5km 안 편의점(세븐일레븐·이마트24)에 30주년 팩 재고가 �
 
 GitHub Actions 가 5분마다 `src/check.js` 를 돌린다 (카카오·이마트24·GS25·11번가·카카오 선물하기). 이전 상태는 Actions cache 의 `state.json`.
 세븐일레븐은 Actions IP 에서 403 으로 막혀서, 맥 launchd 가 `~/.pokemon-alert` 에서 5분마다 세븐만 따로 확인한다.
+입고가 잦은 07~08시·23~00시엔 둘 다 매분 확인한다 (맥은 `setup.sh` 의 `RUSH_HOURS`, Actions 는 cron-job.org 두 번째 작업).
 
 | 소스 | 알림 조건 |
 |---|---|
@@ -27,6 +28,8 @@ GitHub API 로 `workflow_dispatch` 를 호출해 깨운다. 예약 실행(schedu
 - GitHub fine-grained 토큰: 이 repo 만, 권한 `Actions: Read and write` 만
 - cron-job.org 작업: `POST https://api.github.com/repos/hidudu0/pokemon-alert/actions/workflows/check.yml/dispatches`,
   헤더 `Authorization: Bearer <토큰>`, `Accept: application/vnd.github+json`, 본문 `{"ref":"master"}`, 5분마다. 정상 응답은 204
+- cron-job.org 두 번째 작업 (입고 시간 집중): 위 작업을 복제(Clone)하고 일정만 Custom → 분 `Every minute`, 시 `0, 7, 8, 23` 만 선택.
+  두 작업이 겹쳐도 워크플로 `concurrency` 로 차례로 돌아 중복 알림 없음
 - 토큰이 새도 이 repo 의 워크플로를 실행·취소하는 것까지만 가능. 만료되면 새로 만들어 cron-job.org 헤더만 바꾼다
 
 맥 세븐 작업:

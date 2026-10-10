@@ -3,7 +3,7 @@
 #   1. ~/.pokemon-alert 에 repo clone (바탕화면은 macOS 가 백그라운드 프로세스 접근을 막는다)
 #   2. 텔레그램 토큰 입력 → chat id 자동 확인 → ~/.pokemon-alert/.env (권한 600)
 #   3. GitHub Secrets 등록 (Actions 용)
-#   4. 맥 launchd: 5분마다 세븐일레븐만 확인 (Actions IP 는 세븐이 403)
+#   4. 맥 launchd: 5분마다(입고 잦은 시간엔 매분) 세븐일레븐만 확인 (Actions IP 는 세븐이 403)
 #   5. Actions 워크플로 켜고 1회 실행
 # 미리 할 것: @BotFather 로 봇 만들기 → 그 봇에게 아무 메시지나 보내기.
 # 맥 쪽 제거: launchctl bootout gui/$(id -u)/com.pokemon-alert.seven && rm ~/Library/LaunchAgents/com.pokemon-alert.seven.plist
@@ -14,6 +14,12 @@ DIR="$HOME/.pokemon-alert"
 LABEL=com.pokemon-alert.seven
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 NODE="$(command -v node)"
+RUSH_HOURS="7 8 23 0" # 입고가 잦은 시간. 이 시간 동안은 매분 확인
+
+# 평소엔 5분마다, RUSH_HOURS 엔 매분. Minute 없이 Hour 만 주면 launchd 는 그 시간 내내 매분 실행한다
+SCHEDULE=""
+for m in $(seq 0 5 55); do SCHEDULE+="<dict><key>Minute</key><integer>$m</integer></dict>"; done
+for h in $RUSH_HOURS; do SCHEDULE+="<dict><key>Hour</key><integer>$h</integer></dict>"; done
 
 if [ -d "$DIR/.git" ]; then git -C "$DIR" pull -q --ff-only; else git clone -q "https://github.com/$REPO" "$DIR"; fi
 
@@ -54,7 +60,7 @@ cat > "$PLIST" <<EOF
   </array>
   <key>EnvironmentVariables</key>
   <dict><key>SOURCES</key><string>seven</string></dict>
-  <key>StartInterval</key><integer>300</integer>
+  <key>StartCalendarInterval</key><array>$SCHEDULE</array>
   <key>RunAtLoad</key><true/>
 </dict>
 </plist>
