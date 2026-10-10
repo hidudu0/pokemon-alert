@@ -1,6 +1,11 @@
 # 임시: Actions 러너 IP 에서 API 들이 막히는지 확인. Task 7 에서 지운다.
 name: probe
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/probe.yml'
+      - 'scripts/probe.js'
 jobs:
   probe:
     runs-on: ubuntu-latest
