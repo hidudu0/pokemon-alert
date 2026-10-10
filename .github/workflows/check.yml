@@ -1,0 +1,40 @@
+# 5분마다 확인. GitHub 무료 cron 은 수 분~십수 분 늦게 돌 수 있다.
+# repo 에 60일간 커밋이 없으면 GitHub 가 예약 실행을 끈다 → Actions 탭에서 다시 켠다.
+name: check
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+# 실행이 겹치면 state 가 꼬인다
+concurrency:
+  group: check
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # 가장 최근 state 를 복원 (키는 매번 새로 만들고 prefix 로 최신을 찾는다)
+      - uses: actions/cache/restore@v6
+        with:
+          path: state.json
+          key: state-${{ github.run_id }}
+          restore-keys: state-
+      - run: node src/check.js
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      # 위 스텝이 실패(텔레그램 발송 실패)하면 저장을 건너뛰어 다음 실행에서 재시도된다
+      - uses: actions/cache/save@v6
+        with:
+          path: state.json
+          key: state-${{ github.run_id }}
