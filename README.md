@@ -20,6 +20,13 @@ GitHub Actions 가 5분마다 `src/check.js` 를 돌린다 (카카오·이마트
 3. `bash scripts/setup.sh` — 토큰을 (화면에 안 보이게) 입력하면 chat id 확인, GitHub Secrets 등록,
    맥 launchd(세븐) 설치, Actions 켜고 1회 실행까지 한다. 폰에 "📋 알림 시작" 이 두 번 온다 (Actions·맥).
 
+5분 간격 보장 (외부 크론): GitHub 무료 cron 은 실제로 몇 시간씩 밀린다. 그래서 cron-job.org 가 5분마다
+GitHub API 로 `workflow_dispatch` 를 호출해 깨운다. 예약 실행(schedule)은 백업으로 남겨둔다 (같은 state 라 중복 알림 없음).
+- GitHub fine-grained 토큰: 이 repo 만, 권한 `Actions: Read and write` 만
+- cron-job.org 작업: `POST https://api.github.com/repos/hidudu0/pokemon-alert/actions/workflows/check.yml/dispatches`,
+  헤더 `Authorization: Bearer <토큰>`, `Accept: application/vnd.github+json`, 본문 `{"ref":"master"}`, 5분마다. 정상 응답은 204
+- 토큰이 새도 이 repo 의 워크플로를 실행·취소하는 것까지만 가능. 만료되면 새로 만들어 cron-job.org 헤더만 바꾼다
+
 맥 세븐 작업:
 - 마지막 실행 로그 `~/.pokemon-alert/seven.log`, 상태 `~/.pokemon-alert/state.json`
 - 실행할 때마다 `git pull` 로 최신 코드를 받는다
@@ -35,5 +42,5 @@ GitHub Actions 가 5분마다 `src/check.js` 를 돌린다 (카카오·이마트
 ## 주의
 
 - 전부 비공개 웹 API 라 예고 없이 바뀔 수 있다. 바뀌면 파서가 throw → 3회 후 텔레그램 경고.
-- 60일간 커밋이 없으면 GitHub 가 예약 실행을 끈다.
+- 60일간 커밋이 없으면 GitHub 가 예약 실행(백업)을 끈다. 외부 크론 쪽은 영향 없음.
 - 설계: `docs/superpowers/specs/2026-10-10-pokemon-alert-design.md`
