@@ -32,12 +32,15 @@ export function parseStock(json, stores) {
   const list = json?.data?.storeList;
   if (!Array.isArray(list)) throw new Error('세븐 재고 응답 형태 다름');
   const byId = new Map(stores.map((s) => [s.id, s]));
-  return list.filter((r) => byId.has(r.storeCd)).map((r) => stockRow('seven', '세븐일레븐', byId.get(r.storeCd), r.realStock));
+  return list
+    .filter((r) => byId.has(String(r.storeCd)))
+    .map((r) => stockRow('seven', '세븐일레븐', byId.get(String(r.storeCd)), r.realStock));
 }
 
 export async function fetchStock(barcode) {
   const meta = await fetchJson(`${BASE}/api/v1/open/product/search/stock?itemCd=${barcode}`);
-  if (!meta?.smCd) return []; // 세븐에서 안 파는 바코드
+  if (meta === null) return []; // 모르는 바코드 = 빈 본문 = 세븐에서 안 파는 상품
+  if (!meta.smCd) throw new Error('세븐 상품 조회 응답 형태 다름');
   const stores = parseStores(
     await Promise.all(STORE_QUERIES.map((query) => post('/api/v1/open/search/store', { collection: 'store', query, sort: 'Date/desc', listCount: 500 }))),
   );

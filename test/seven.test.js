@@ -34,3 +34,14 @@ test('seven: 형태 다른 응답은 throw', () => {
   assert.throws(() => parseStores([{ success: false }]), /형태/);
   assert.throws(() => parseStock({ data: {} }, []), /형태/);
 });
+
+const STORES = [{ id: '68846', name: '광주교통방송점', lat: 35.2215881703, lng: 126.8463290126 }];
+
+test('seven: 수량 필드 이름이 바뀌면 0 으로 삼키지 않고 throw', () => {
+  assert.throws(() => parseStock({ success: true, data: { storeList: [{ storeCd: '68846' }] } }, STORES), /형태/);
+});
+
+test('seven: 숫자 storeCd 도 매장과 맞춘다', () => {
+  const rows = parseStock({ success: true, data: { storeList: [{ storeCd: 68846, realStock: 2 }] } }, STORES);
+  assert.deepEqual(rows.map((r) => [r.key, r.qty]), [['seven:68846', 2]]);
+});
