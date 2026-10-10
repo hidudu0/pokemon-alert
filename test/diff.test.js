@@ -110,3 +110,13 @@ test('첫 실행: 실패한 소스를 밝힌다 (세븐 403 이면 "재고 없�
 test('첫 실행: 모두 성공하면 실패 줄 없음', () => {
   assert.doesNotMatch(diff({}, all()).text, /조회 실패/);
 });
+
+test('일부 소스만 넘겨도 동작한다 (맥에서 세븐만 돌릴 때)', () => {
+  const r1 = diff({}, { seven: ok([row('seven', 'A', 2)]) });
+  assert.match(r1.text, /🟢 세븐일레븐 A점 2개/);
+  assert.doesNotMatch(r1.text, /조회 실패/);
+  assert.deepEqual(Object.keys(r1.state.failures), ['seven']);
+  const r2 = diff(r1.state, { seven: fail() });
+  assert.equal(r2.state.stock['seven:A'], 2);
+  assert.equal(r2.text, '');
+});

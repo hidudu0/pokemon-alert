@@ -1,0 +1,62 @@
+#!/bin/bash
+# 한 번만 실행하면 끝나는 설정. 다시 실행해도 된다 (코드 업데이트·재등록).
+#   1. ~/.pokemon-alert 에 repo clone (바탕화면은 macOS 가 백그라운드 프로세스 접근을 막는다)
+#   2. 텔레그램 토큰 입력 → chat id 자동 확인 → ~/.pokemon-alert/.env (권한 600)
+#   3. GitHub Secrets 등록 (Actions 용)
+#   4. 맥 launchd: 5분마다 세븐일레븐만 확인 (Actions IP 는 세븐이 403)
+#   5. Actions 워크플로 켜고 1회 실행
+# 미리 할 것: @BotFather 로 봇 만들기 → 그 봇에게 아무 메시지나 보내기.
+# 맥 쪽 제거: launchctl bootout gui/$(id -u)/com.pokemon-alert.seven && rm ~/Library/LaunchAgents/com.pokemon-alert.seven.plist
+set -euo pipefail
+
+REPO=hidudu0/pokemon-alert
+DIR="$HOME/.pokemon-alert"
+LABEL=com.pokemon-alert.seven
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+NODE="$(command -v node)"
+
+if [ -d "$DIR/.git" ]; then git -C "$DIR" pull -q --ff-only; else git clone -q "https://github.com/$REPO" "$DIR"; fi
+
+if [ ! -f "$DIR/.env" ]; then
+  read -rsp '텔레그램 봇 토큰 (화면에 안 보임): ' T; echo
+  C=$(curl -fsS "https://api.telegram.org/bot$T/getUpdates" | grep -oE '"chat":\{"id":-?[0-9]+' | head -1 | grep -oE -- '-?[0-9]+$') || true
+  if [ -z "$C" ]; then
+    echo 'chat id 를 못 찾았다. 토큰이 맞는지, 봇 대화방에 메시지를 보냈는지 확인하고 다시 실행.' >&2
+    exit 1
+  fi
+  (umask 077; printf 'TELEGRAM_TOKEN=%s\nTELEGRAM_CHAT_ID=%s\n' "$T" "$C" > "$DIR/.env")
+  unset T
+fi
+set -a; . "$DIR/.env"; set +a
+
+printf %s "$TELEGRAM_TOKEN" | gh secret set TELEGRAM_TOKEN -R "$REPO"
+printf %s "$TELEGRAM_CHAT_ID" | gh secret set TELEGRAM_CHAT_ID -R "$REPO"
+
+mkdir -p "$HOME/Library/LaunchAgents"
+cat > "$PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$LABEL</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>cd "$DIR" &amp;&amp; git pull -q --ff-only; exec "$NODE" --env-file-if-exists=.env src/check.js &gt; seven.log 2&gt;&amp;1</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict><key>SOURCES</key><string>seven</string></dict>
+  <key>StartInterval</key><integer>300</integer>
+  <key>RunAtLoad</key><true/>
+</dict>
+</plist>
+EOF
+launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$PLIST"
+
+gh workflow enable check.yml -R "$REPO"
+gh workflow run check.yml -R "$REPO"
+
+echo "끝. 폰에 '📋 포켓몬카드 30주년 알림 시작' 이 두 번 온다 (Actions 1번, 맥 세븐 1번)."
+echo "맥 세븐 마지막 실행 로그: $DIR/seven.log"

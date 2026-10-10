@@ -12,12 +12,16 @@ import { isListed } from './sources/gs25.js';
 const STATE = new URL('../state.json', import.meta.url);
 const prev = JSON.parse(await readFile(STATE, 'utf8').catch(() => '{}'));
 
-const jobs = {
-  kakao: fetchPosts(),
-  seven: seven.fetchStock(BARCODE),
-  emart24: emart24.fetchStock(BARCODE),
-  gs25: isListed(BARCODE),
+// SOURCES=seven 처럼 쉼표로 고르면 그 소스만 돈다 (Actions 는 세븐이 403 이라 맥에서 세븐만 따로 돌린다). 없으면 전부.
+const only = process.env.SOURCES?.split(',').map((s) => s.trim());
+const all = {
+  kakao: () => fetchPosts(),
+  seven: () => seven.fetchStock(BARCODE),
+  emart24: () => emart24.fetchStock(BARCODE),
+  gs25: () => isListed(BARCODE),
 };
+if (only?.some((k) => !(k in all))) throw new Error(`SOURCES 에 모르는 소스: ${only.join(',')} (가능: ${Object.keys(all).join(',')})`);
+const jobs = Object.fromEntries(Object.entries(all).filter(([k]) => !only || only.includes(k)).map(([k, run]) => [k, run()]));
 const settled = await Promise.allSettled(Object.values(jobs));
 const results = Object.fromEntries(
   Object.keys(jobs).map((k, i) => {
