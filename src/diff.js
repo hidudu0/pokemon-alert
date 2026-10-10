@@ -1,5 +1,7 @@
 // src/diff.js — 이전 state 와 이번 조회 결과를 비교해 알림 문구와 새 state 를 만든다 (순수 함수)
-const LABEL = { kakao: '카카오 화성스토어TCG', seven: '세븐일레븐', emart24: '이마트24', gs25: 'GS25' };
+import { URLS } from './sources/online.js';
+
+const LABEL = { kakao: '카카오 화성스토어TCG', seven: '세븐일레븐', emart24: '이마트24', gs25: 'GS25', '11st': '11번가', kakaogift: '카카오 선물하기' };
 const KEEP_SEEN = 100;
 const FAIL_ALERT_AT = 3;
 
@@ -13,9 +15,11 @@ export function diff(prev, results) {
     stock: { ...prev.stock },
     names: { ...prev.names }, // 응답에서 빠진 매장도 감소 알림에 이름을 쓰려고
     gs25Listed: prev.gs25Listed ?? false,
+    onSale: { ...prev.onSale },
     failures: { ...prev.failures },
   };
   const stock = [];
+  const online = [];
   const less = [];
   const gs25 = [];
   const kakao = [];
@@ -34,6 +38,12 @@ export function diff(prev, results) {
   for (const [key, qty] of Object.entries(state.stock)) {
     const was = prev.stock?.[key] ?? 0;
     if (qty < was) less.push(`🔽 ${state.names[key] ?? key} ${was}→${qty}개`);
+  }
+
+  for (const src of Object.keys(URLS)) {
+    if (!results[src]?.ok) continue;
+    if (results[src].value && !state.onSale[src]) online.push(`🛒 ${LABEL[src]} 판매 시작`, URLS[src]);
+    state.onSale[src] = results[src].value;
   }
 
   if (results.gs25?.ok) {
@@ -61,7 +71,7 @@ export function diff(prev, results) {
     }
   }
 
-  const lines = [...stock, ...less, ...gs25, ...kakao, ...health];
+  const lines = [...stock, ...online, ...less, ...gs25, ...kakao, ...health];
   if (first) {
     const down = Object.entries(results).filter(([, r]) => !r.ok).map(([src]) => LABEL[src]);
     lines.unshift(

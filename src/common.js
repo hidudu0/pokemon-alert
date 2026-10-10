@@ -18,11 +18,15 @@ export function stockRow(src, chain, store, qty) {
   return { key: `${src}:${store.id}`, chain, name: store.name, qty: n, km: km(HOME.lat, HOME.lng, store.lat, store.lng) };
 }
 
-export async function fetchJson(url, opts = {}) {
+export async function fetchText(url, opts = {}) {
   const res = await fetch(url, { ...opts, headers: { ...HEADERS, ...opts.headers }, signal: AbortSignal.timeout(20_000) });
-  const text = await res.text();
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${url.split('?')[0]}`);
+  return res.text();
+}
+
+export async function fetchJson(url, opts = {}) {
+  const text = await fetchText(url, opts);
   const where = url.split('?')[0];
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${where}`);
   if (!text) return null;
   try {
     return JSON.parse(text);

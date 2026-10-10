@@ -8,6 +8,7 @@ import { fetchPosts } from './sources/kakao.js';
 import * as seven from './sources/seven.js';
 import * as emart24 from './sources/emart24.js';
 import { isListed } from './sources/gs25.js';
+import { onSale11st, onSaleKakaoGift } from './sources/online.js';
 
 const STATE = new URL('../state.json', import.meta.url);
 const prev = JSON.parse(await readFile(STATE, 'utf8').catch(() => '{}'));
@@ -19,6 +20,8 @@ const all = {
   seven: () => seven.fetchStock(BARCODE),
   emart24: () => emart24.fetchStock(BARCODE),
   gs25: () => isListed(BARCODE),
+  '11st': () => onSale11st(),
+  kakaogift: () => onSaleKakaoGift(),
 };
 if (only?.some((k) => !(k in all))) throw new Error(`SOURCES 에 모르는 소스: ${only.join(',')} (가능: ${Object.keys(all).join(',')})`);
 const jobs = Object.fromEntries(Object.entries(all).filter(([k]) => !only || only.includes(k)).map(([k, run]) => [k, run()]));

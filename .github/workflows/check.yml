@@ -32,7 +32,7 @@ jobs:
       - run: node src/check.js
         env:
           # 세븐일레븐은 Actions IP 에서 403 → 맥 launchd 가 따로 돈다 (scripts/mac-seven.sh)
-          SOURCES: kakao,emart24,gs25
+          SOURCES: kakao,emart24,gs25,11st,kakaogift
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       # 위 스텝이 실패(텔레그램 발송 실패)하면 저장을 건너뛰어 다음 실행에서 재시도된다

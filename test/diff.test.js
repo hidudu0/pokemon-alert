@@ -57,6 +57,16 @@ test('재고: 0/없음 → N 은 🔴, 줄면 🔽, 늘거나 그대로면 조�
   assert.deepEqual(state.stock, { 'seven:A': 1, 'seven:B': 5, 'seven:C': 0, 'seven:D': 4, 'seven:E': 1, 'seven:F': 2 });
 });
 
+test('온라인: 품절 → 판매중일 때만 🛒 + 링크, 계속 판매중이거나 실패하면 조용히', () => {
+  const r1 = diff(base, all({ '11st': ok(true), kakaogift: ok(false) }));
+  assert.deepEqual(r1.text.split('\n'), ['🛒 11번가 판매 시작', 'https://www.11st.co.kr/products/9622837520']);
+  const r2 = diff(r1.state, all({ '11st': ok(true), kakaogift: fail() }));
+  assert.equal(r2.text, '');
+  assert.deepEqual(r2.state.onSale, { '11st': true, kakaogift: false });
+  const r3 = diff(r2.state, all({ '11st': ok(false), kakaogift: ok(true) }));
+  assert.deepEqual(r3.text.split('\n'), ['🛒 카카오 선물하기 판매 시작', 'https://gift.kakao.com/product/14321625']);
+});
+
 test('재고: 응답에서 빠진 매장은 0 으로 (이름은 기억해 둔 걸로), 다시 생기면 재입고 알림', () => {
   const r0 = diff(base, all({ emart24: ok([row('emart24', 'A', 9)]) }));
   const r1 = diff(r0.state, all());

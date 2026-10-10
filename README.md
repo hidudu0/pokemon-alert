@@ -1,9 +1,10 @@
 # 포켓몬카드 30주년 알림
 
 GIST 5km 안 편의점(세븐일레븐·이마트24)에 30주년 팩 재고가 생기거나,
+11번가·카카오 선물하기에서 판매가 시작되거나,
 광주 화성스토어TCG 카카오 채널에 새 글이 올라오면 텔레그램으로 알려준다. 나 혼자 쓰는 용도.
 
-GitHub Actions 가 5분마다 `src/check.js` 를 돌린다 (카카오·이마트24·GS25). 이전 상태는 Actions cache 의 `state.json`.
+GitHub Actions 가 5분마다 `src/check.js` 를 돌린다 (카카오·이마트24·GS25·11번가·카카오 선물하기). 이전 상태는 Actions cache 의 `state.json`.
 세븐일레븐은 Actions IP 에서 403 으로 막혀서, 맥 launchd 가 `~/.pokemon-alert` 에서 5분마다 세븐만 따로 확인한다.
 
 | 소스 | 알림 조건 |
@@ -11,6 +12,7 @@ GitHub Actions 가 5분마다 `src/check.js` 를 돌린다 (카카오·이마트
 | 카카오 채널 `_kxhLKxj` | 새 글 전부 |
 | 세븐일레븐 · 이마트24 | 매장별 재고 0 → 1개 이상은 🔴, 줄어들면 🔽 (세븐은 맥이 깨어 있을 때만) |
 | GS25 | 상품 검색에 30주년 팩이 처음 등록될 때 (매장 재고는 로그인 필요라 미구현) |
+| 11번가 · 카카오 선물하기 | 품절 → 판매중일 때 🛒 + 링크. G마켓·SSG·네이버 스마트스토어는 봇 차단(403/429)이라 미지원 |
 | 공통 | 한 소스가 3번 연속 실패하면 경고, 복구되면 알림 |
 
 ## 설정
@@ -36,8 +38,8 @@ GitHub API 로 `workflow_dispatch` 를 호출해 깨운다. 예약 실행(schedu
 
 - `npm test` — 테스트 (네트워크 안 씀)
 - `npm run check` — 로컬 1회 실행 (`.env` 에 TELEGRAM_TOKEN, TELEGRAM_CHAT_ID). 로컬 state.json 은 Actions 와 별개.
-  `SOURCES=seven npm run check` 처럼 소스를 고를 수 있다 (kakao, seven, emart24, gs25)
-- 상품 바꾸기: `src/common.js` 의 `BARCODE`
+  `SOURCES=seven npm run check` 처럼 소스를 고를 수 있다 (kakao, seven, emart24, gs25, 11st, kakaogift)
+- 상품 바꾸기: 편의점은 `src/common.js` 의 `BARCODE`, 온라인은 `src/sources/online.js` 의 URL
 
 ## 주의
 
