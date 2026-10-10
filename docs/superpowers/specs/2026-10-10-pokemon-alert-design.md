@@ -68,8 +68,10 @@ test/fixtures/          리서치 때 받은 실제 응답
 - 재고: `POST /api/v1/stock/search/stores` body
   `{searchType:"list", storeCdList:[...], myLat:enc(lat), myLng:enc(lng), order:"stock", smCd, stokMngCd:smCd, stokMngQty:1, stockApplicationRate:"100", ignoreRateYn:"Y"}`
   → `data.storeList[]` 의 `storeCd, storeNm, realStock`.
-  `storeCdList` 한 번에 몇 개까지 받는지 미검증 (12개 성공). 구현 시 66개로 시도하고 실패하면 20개씩 나눈다.
-- `smCd`: 30주년 팩은 `138458`. 바코드 → smCd 는 `GET /api/v1/open/product/search/stock?itemCd=<barcode>` 로 구하지만 상수로 둔다.
+  66개를 한 번에 보내도 된다 (검증함). **응답에는 그 상품을 취급하는 매장만 온다** (66개 중 4개). 빠진 매장 = 0.
+  `storeNm` 필드는 보내지 않는다 (넣었을 때 빈 목록이 오는 경우가 있었다).
+- `smCd`: `GET /api/v1/open/product/search/stock?itemCd=<barcode>` → 감싸지 않은 객체 `{itemCd, itemOnm, smCd, ...}`.
+  30주년 팩은 `138458`. 매 실행 조회한다 (요청 1개, 바코드만 바꾸면 다른 상품도 됨). 모르는 바코드면 `smCd` 없음 → 빈 결과.
 - `enc`: 좌표 문자열을 RSA-OAEP-SHA256 으로 암호화 후 base64. 공개키는 홈페이지 런타임 설정(`rsaPublicKey`)에 공개된 값으로,
   `seven.js` 에 상수로 둔다 (값은 구현 플랜에 적는다). 평문을 보내면 "RSA 복호화 실패".
 - WAF(Imperva) 뒤에 있다. 데이터센터 IP·일부 TLS 지문 차단 사례 있음 → 1단계 첫 작업에서 Actions IP 로 검증.
