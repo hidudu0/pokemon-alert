@@ -1,7 +1,8 @@
 // test/seven.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseStores, parseStock } from '../src/sources/seven.js';
+import { parseStores, parseStock, groups } from '../src/sources/seven.js';
+import { km } from '../src/common.js';
 
 const doc = (storeCd, storeNm, storeLat, storeLon, storeCloseYn = 'N') => ({ field: { storeCd, storeNm, storeLat, storeLon, storeCloseYn } });
 const search = (...docs) => ({
@@ -48,4 +49,16 @@ test('seven: 숫자 storeCd 도 매장과 맞춘다', () => {
 
 test('seven: storeCd 필드 이름이 바뀌면 조용히 0건이 아니라 throw', () => {
   assert.throws(() => parseStock({ success: true, data: { storeList: [{ store_cd: '68846', realStock: 1 }] } }, STORES), /storeCd/);
+});
+
+test('seven: 재고 API 는 내 위치 1km 안 매장만 답하니, 매장마다 0.9km 안 중심을 가진 그룹에 정확히 한 번', () => {
+  const at = (id, lat, lng) => ({ id, name: id, lat, lng });
+  const stores = [at('a', 35.2216, 126.8463), at('b', 35.223, 126.847), at('c', 35.25, 126.8), at('d', 35.2, 126.88), at('e', 35.2005, 126.8805)];
+  const gs = groups(stores);
+  assert.deepEqual(gs.flatMap((g) => g.ids).sort(), ['a', 'b', 'c', 'd', 'e']);
+  for (const g of gs) for (const id of g.ids) {
+    const s = stores.find((x) => x.id === id);
+    assert.ok(km(g.lat, g.lng, s.lat, s.lng) <= 0.9, id);
+  }
+  assert.equal(gs.length, 3);
 });
