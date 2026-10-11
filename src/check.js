@@ -7,7 +7,7 @@ import { send } from './telegram.js';
 import { fetchPosts } from './sources/kakao.js';
 import * as seven from './sources/seven.js';
 import * as emart24 from './sources/emart24.js';
-import { isListed } from './sources/gs25.js';
+import * as gs25 from './sources/gs25.js';
 import { onSale11st, onSaleKakaoGift } from './sources/online.js';
 
 const STATE = new URL('../state.json', import.meta.url);
@@ -19,12 +19,15 @@ const all = {
   kakao: () => fetchPosts(),
   seven: () => seven.fetchStock(BARCODE),
   emart24: () => emart24.fetchStock(BARCODE),
-  gs25: () => isListed(BARCODE),
+  gs25: () => gs25.isListed(BARCODE),
+  gs25stock: () => gs25.fetchStock(BARCODE), // 맥 전용 (로그인 세션 파일이 맥에만 있다)
   '11st': () => onSale11st(),
   kakaogift: () => onSaleKakaoGift(),
 };
 if (only?.some((k) => !(k in all))) throw new Error(`SOURCES 에 모르는 소스: ${only.join(',')} (가능: ${Object.keys(all).join(',')})`);
-const jobs = Object.fromEntries(Object.entries(all).filter(([k]) => !only || only.includes(k)).map(([k, run]) => [k, run()]));
+// GS25 재고는 1회에 55번 호출이라 입고 잦은 시간의 매분 실행에서도 5분마다만
+const skip = (k) => k === 'gs25stock' && new Date().getMinutes() % 5 !== 0;
+const jobs = Object.fromEntries(Object.entries(all).filter(([k]) => (!only || only.includes(k)) && !skip(k)).map(([k, run]) => [k, run()]));
 const settled = await Promise.allSettled(Object.values(jobs));
 const results = Object.fromEntries(
   Object.keys(jobs).map((k, i) => {

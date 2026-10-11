@@ -141,3 +141,11 @@ test('일부 소스만 넘겨도 동작한다 (맥에서 세븐만 돌릴 때)',
   assert.equal(r2.state.stock['seven:A'], 2);
   assert.equal(r2.text, '');
 });
+
+test('GS25 재고도 세븐·이마트24 처럼 새 재고·감소 알림', () => {
+  const g = (qty) => ({ key: 'gs25stock:V8M37', chain: 'GS25', name: '광주GIST2호점', qty, km: 0.3 });
+  const r1 = diff(base, { gs25stock: ok([g(5)]) });
+  assert.match(r1.text, /🔴 GS25 광주GIST2호점 5개 \(0\.3km\)/);
+  const r2 = diff(r1.state, { gs25stock: ok([]) }); // 응답에서 빠지면 0
+  assert.match(r2.text, /🔽 GS25 광주GIST2호점 5→0개/);
+});

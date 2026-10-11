@@ -3,3 +3,5 @@ state.json
 .env
 .superpowers/
 .claude/worktrees/
+gs25-auth.json
+*.tmp

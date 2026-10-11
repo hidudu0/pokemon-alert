@@ -1,7 +1,7 @@
 // src/diff.js — 이전 state 와 이번 조회 결과를 비교해 알림 문구와 새 state 를 만든다 (순수 함수)
 import { URLS } from './sources/online.js';
 
-const LABEL = { kakao: '카카오 화성스토어TCG', seven: '세븐일레븐', emart24: '이마트24', gs25: 'GS25', '11st': '11번가', kakaogift: '카카오 선물하기' };
+const LABEL = { kakao: '카카오 화성스토어TCG', seven: '세븐일레븐', emart24: '이마트24', gs25: 'GS25', gs25stock: 'GS25 재고', '11st': '11번가', kakaogift: '카카오 선물하기' };
 const KEEP_SEEN = 100;
 const FAIL_ALERT_AT = 3;
 
@@ -25,7 +25,7 @@ export function diff(prev, results) {
   const kakao = [];
   const health = [];
 
-  for (const src of ['seven', 'emart24']) {
+  for (const src of ['seven', 'emart24', 'gs25stock']) {
     if (!results[src]?.ok) continue;
     for (const key of Object.keys(state.stock)) if (key.startsWith(`${src}:`)) state.stock[key] = 0; // 응답에 없는 매장 = 0
     for (const r of results[src].value) {

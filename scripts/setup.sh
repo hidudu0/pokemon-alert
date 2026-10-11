@@ -3,7 +3,8 @@
 #   1. ~/.pokemon-alert 에 repo clone (바탕화면은 macOS 가 백그라운드 프로세스 접근을 막는다)
 #   2. 텔레그램 토큰 입력 → chat id 자동 확인 → ~/.pokemon-alert/.env (권한 600)
 #   3. GitHub Secrets 등록 (Actions 용)
-#   4. 맥 launchd: 5분마다(입고 잦은 시간엔 매분) 세븐일레븐만 확인 (Actions IP 는 세븐이 403)
+#   4. 맥 launchd: 5분마다(입고 잦은 시간엔 매분) 세븐일레븐·GS25 재고 확인 (Actions IP 는 세븐이 403, GS25 는 로그인 세션이 맥에만)
+#      GS25 재고는 따로 한 번 `node scripts/gs25-login.mjs` 로 로그인해야 돈다 (안 하면 3번 실패 후 경고)
 #   5. Actions 워크플로 켜고 1회 실행
 # 미리 할 것: @BotFather 로 봇 만들기 → 그 봇에게 아무 메시지나 보내기.
 # 맥 쪽 제거: launchctl bootout gui/$(id -u)/com.pokemon-alert.seven && rm ~/Library/LaunchAgents/com.pokemon-alert.seven.plist
@@ -59,7 +60,7 @@ cat > "$PLIST" <<EOF
     <string>cd "$DIR" &amp;&amp; git pull -q --ff-only; exec "$NODE" --env-file-if-exists=.env src/check.js &gt; seven.log 2&gt;&amp;1</string>
   </array>
   <key>EnvironmentVariables</key>
-  <dict><key>SOURCES</key><string>seven</string></dict>
+  <dict><key>SOURCES</key><string>seven,gs25stock</string></dict>
   <key>StartCalendarInterval</key><array>$SCHEDULE</array>
   <key>RunAtLoad</key><true/>
 </dict>
