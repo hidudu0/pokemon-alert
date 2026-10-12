@@ -17,10 +17,11 @@ PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 NODE="$(command -v node)"
 RUSH_HOURS="7 8 23 0" # 입고가 잦은 시간. 이 시간 동안은 매분 확인
 
-# 평소엔 5분마다, RUSH_HOURS 엔 매분. Minute 없이 Hour 만 주면 launchd 는 그 시간 내내 매분 실행한다
+# 평소엔 5분마다, RUSH_HOURS 엔 매분. Hour 만 주면 launchd 는 매분이 아니라 사실상 안 돈다 (2026-10-11 실측)
+# 그래서 RUSH_HOURS 의 매 분을 Hour+Minute 로 하나씩 적는다
 SCHEDULE=""
 for m in $(seq 0 5 55); do SCHEDULE+="<dict><key>Minute</key><integer>$m</integer></dict>"; done
-for h in $RUSH_HOURS; do SCHEDULE+="<dict><key>Hour</key><integer>$h</integer></dict>"; done
+for h in $RUSH_HOURS; do for m in $(seq 0 59); do SCHEDULE+="<dict><key>Hour</key><integer>$h</integer><key>Minute</key><integer>$m</integer></dict>"; done; done
 
 if [ -d "$DIR/.git" ]; then git -C "$DIR" pull -q --ff-only; else git clone -q "https://github.com/$REPO" "$DIR"; fi
 
