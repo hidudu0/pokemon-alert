@@ -1,4 +1,10 @@
 // 텔레그램 봇으로 나에게 메시지. 토큰은 env 로만 받고 에러 메시지에 넣지 않는다.
+import net from 'node:net';
+
+// Node 는 IPv4/IPv6 주소마다 250ms 만 기다리고 넘어간다. 한국 맥 → 텔레그램(암스테르담) TCP 연결은
+// 0.3초라 매번 전 주소 실패 → CONNECT_TIMEOUT 이었다 (curl 은 됨). 주소당 2초로 늘린다
+net.setDefaultAutoSelectFamilyAttemptTimeout(2000);
+
 export async function send(text) {
   const { TELEGRAM_TOKEN, TELEGRAM_CHAT_ID } = process.env;
   if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) throw new Error('TELEGRAM_TOKEN / TELEGRAM_CHAT_ID 환경변수 없음');
