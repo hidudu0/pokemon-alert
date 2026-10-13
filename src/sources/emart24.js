@@ -16,7 +16,7 @@ export function parseStores(json) {
 export function stockUrls(barcode, ids) {
   const urls = [];
   for (let i = 0; i < ids.length; i += STOCK_BATCH) {
-    urls.push(`https://everse.emart24.co.kr/api/stock/v2/stock-search/store?searchPluCode=${barcode}&bizNoArr=${ids.slice(i, i + STOCK_BATCH).join(',')}`);
+    urls.push(`https://everse.emart24.co.kr/api/stock/v3/stock-search/store?searchPluCode=${barcode}&bizNoArr=${ids.slice(i, i + STOCK_BATCH).join(',')}`);
   }
   return urls;
 }

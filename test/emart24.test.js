@@ -27,6 +27,14 @@ test('emart24: 재고 조회는 10개씩 나눈다', () => {
   assert.match(urls[2], /bizNoArr=20,21,22$/);
 });
 
+test('emart24: 재고 API 는 v3 (2026-10-13 v2 는 "99999…" 문자열만 준다)', () => {
+  assert.match(stockUrls('8800286275732', ['1'])[0], /\/api\/stock\/v3\/stock-search\/store\?/);
+});
+
+test('emart24: v2 폐기 응답처럼 storeGoodsQty 가 배열이 아니면 throw', () => {
+  assert.throws(() => parseStock({ storeGoodsQty: '99999999999999999999999', storeInfo: '99999999999999999999999' }, []), /형태/);
+});
+
 test('emart24: 재고 응답을 공통 모양으로', () => {
   const stores = [{ id: '20913', name: '첨단메디케어점', lat: 35.2136422667519, lng: 126.850841892567 }];
   const rows = parseStock({ storeGoodsQty: [{ BIZNO: '20913', PLU_CD: '8800286275732', BIZQTY: 9 }], storeInfo: [] }, stores);
