@@ -3,6 +3,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { BARCODE } from './common.js';
 import { diff } from './diff.js';
+import { due, heartbeat, today } from './heartbeat.js';
 import { send } from './telegram.js';
 import { fetchPosts } from './sources/kakao.js';
 import * as seven from './sources/seven.js';
@@ -38,6 +39,13 @@ const results = Object.fromEntries(
 for (const [k, r] of Object.entries(results)) console.log(k, r.ok ? 'ok' : `FAIL ${r.error}`);
 
 const { state, text } = diff(prev, results);
-console.log(text || '(알림 없음)');
-if (text) await send(text);
+// 맥 작업만 HEARTBEAT_HOUR 를 준다. 그 시각 이후 첫 실행에서 하루 한 번 점검 메시지
+const hour = process.env.HEARTBEAT_HOUR;
+state.heartbeatDay = prev.heartbeatDay;
+const now = new Date();
+const beat = hour && due(prev.heartbeatDay, now, Number(hour)) ? await heartbeat(state, now) : '';
+if (beat) state.heartbeatDay = today(now);
+const out = [text, beat].filter(Boolean).join('\n\n');
+console.log(out || '(알림 없음)');
+if (out) await send(out);
 await writeFile(STATE, JSON.stringify(state, null, 2));

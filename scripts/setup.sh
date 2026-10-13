@@ -4,6 +4,7 @@
 #   2. 텔레그램 토큰 입력 → chat id 자동 확인 → ~/.pokemon-alert/.env (권한 600)
 #   3. GitHub Secrets 등록 (Actions 용)
 #   4. 맥 launchd: 5분마다(입고 잦은 시간엔 매분) 세븐일레븐·GS25 재고 확인 (Actions IP 는 세븐이 403, GS25 는 로그인 세션이 맥에만)
+#      매일 11시 이후 첫 실행에서 '✅ 시스템 점검' 메시지 (HEARTBEAT_HOUR)
 #      GS25 재고는 따로 한 번 `node scripts/gs25-login.mjs` 로 로그인해야 돈다 (안 하면 3번 실패 후 경고)
 #   5. Actions 워크플로 켜고 1회 실행
 # 미리 할 것: @BotFather 로 봇 만들기 → 그 봇에게 아무 메시지나 보내기.
@@ -61,7 +62,7 @@ cat > "$PLIST" <<EOF
     <string>cd "$DIR" &amp;&amp; git pull -q --ff-only; exec "$NODE" --env-file-if-exists=.env src/check.js &gt; seven.log 2&gt;&amp;1</string>
   </array>
   <key>EnvironmentVariables</key>
-  <dict><key>SOURCES</key><string>seven,gs25stock</string></dict>
+  <dict><key>SOURCES</key><string>seven,gs25stock</string><key>HEARTBEAT_HOUR</key><string>11</string></dict>
   <key>StartCalendarInterval</key><array>$SCHEDULE</array>
   <key>RunAtLoad</key><true/>
 </dict>
